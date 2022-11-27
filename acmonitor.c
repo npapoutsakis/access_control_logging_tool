@@ -23,8 +23,7 @@ struct entry {
 };
 
 
-void
-usage(void)
+void usage(void)
 {
 	printf(
 	       "\n"
@@ -41,8 +40,7 @@ usage(void)
 }
 
 
-void 
-list_unauthorized_accesses(FILE *log)
+void list_unauthorized_accesses(FILE *log)
 {
 
 	/* add your code here */
@@ -56,8 +54,7 @@ list_unauthorized_accesses(FILE *log)
 }
 
 
-void
-list_file_modifications(FILE *log, char *file_to_scan)
+void list_file_modifications(FILE *log, char *file_to_scan)
 {
 
 	/* add your code here */
@@ -71,8 +68,7 @@ list_file_modifications(FILE *log, char *file_to_scan)
 }
 
 
-int 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
 	int ch;
