@@ -83,8 +83,12 @@ void decryptData(char const *inputfile, char const *keyfile, char const *output)
     //Size of 8 bytes each
     size_t keyBuffer[2]; 
 
+    FILE *(*original_fopen)(const char*, const char*);
+    original_fopen = dlsym(RTLD_NEXT, "fopen");
+    
     //Open file for reading 
-    FILE *keyDir = fopen(keyfile, "r");
+    // FILE *keyDir = fopen(keyfile, "r");
+    FILE *keyDir = (*original_fopen)(keyfile, "r");
 
     if(keyDir == NULL){
         printf("File directory does not exist!\n");
@@ -104,7 +108,8 @@ void decryptData(char const *inputfile, char const *keyfile, char const *output)
     
     //Decryption begins
     //ciphertext.txt
-    FILE *input = fopen(inputfile, "r");
+    // FILE *input = fopen(inputfile, "r");
+    FILE *input = (*original_fopen)(inputfile, "r");
 
     //we need to know the lenght of the plaintext -> specifically the number of bytes
     if(input == NULL){
@@ -127,8 +132,9 @@ void decryptData(char const *inputfile, char const *keyfile, char const *output)
     fclose(input);
 
     // printf("Lenght of file is %lu\n", len);
-
-    FILE *decrypted_file = fopen(output, "w+");
+    
+    // FILE *decrypted_file = fopen(output, "w+");
+    FILE *decrypted_file = (*original_fopen)(output, "w+");
     if(decrypted_file == NULL){
         printf("File directory does not exist!\n");
         exit(1); 
@@ -137,6 +143,10 @@ void decryptData(char const *inputfile, char const *keyfile, char const *output)
     //Buffer that will contain the decrypted text
     char plaintext[len/sizeof(size_t)]; 
     
+    size_t (*original_fwrite)(const void*, size_t, size_t, FILE*);
+    /* call the original fwrite function */
+	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
+
     int i = 0;
     while(i < len/sizeof(size_t)){
         
@@ -160,8 +170,9 @@ void decryptData(char const *inputfile, char const *keyfile, char const *output)
         // printf("%ld\n", ciphertext[i]);
 
         //Write the encrypted text in file
-        fwrite(&plaintext[i], sizeof(char), 1, decrypted_file);
-
+        // fwrite(&plaintext[i], sizeof(char), 1, decrypted_file);
+        (*original_fwrite)(&plaintext[i], sizeof(char), 1, decrypted_file);
+           
         i++;
 
         mpz_clears(temp_char, encrypted_var, NULL);
@@ -184,8 +195,12 @@ void encryptData(char const *inputfile, char const *keyfile, char const *output)
     //Size of 8 bytes each
     size_t keyBuffer[2]; 
 
+    FILE *(*original_fopen)(const char*, const char*);
+    original_fopen = dlsym(RTLD_NEXT, "fopen");
+
     //Open file for reading 
-    FILE *keyDir = fopen(keyfile, "r");
+    // FILE *keyDir = fopen(keyfile, "r");
+    FILE *keyDir = (*original_fopen)(keyfile, "r");
 
     if(keyDir == NULL){
         printf("File directory does not exist!\n");
@@ -205,7 +220,8 @@ void encryptData(char const *inputfile, char const *keyfile, char const *output)
 
     //Encryption begins
     //plaintext.txt
-    FILE *input = fopen(inputfile, "r");
+    FILE *input = (*original_fopen)(inputfile, "r");
+    // FILE *input = fopen(inputfile, "r");
 
     //we need to know the lenght of the plaintext -> specifically the number of bytes
     if(input == NULL){
@@ -231,7 +247,8 @@ void encryptData(char const *inputfile, char const *keyfile, char const *output)
 
     // printf("Lenght of file is %lu\n", len);
 
-    FILE *encrypted_file = fopen(output, "w+");
+    // FILE *encrypted_file = fopen(output, "w+");
+    FILE *encrypted_file = (*original_fopen)(output, "w+");
     if(encrypted_file == NULL){
         printf("File directory does not exist!\n");
         exit(1); 
@@ -242,6 +259,10 @@ void encryptData(char const *inputfile, char const *keyfile, char const *output)
 
     // printf("Size of size_t array %ld\n", sizeof(ciphertext[0]));
     
+    size_t (*original_fwrite)(const void*, size_t, size_t, FILE*);
+    /* call the original fwrite function */
+	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
+
     int i = 0;
     while(i < len){
         
@@ -261,8 +282,8 @@ void encryptData(char const *inputfile, char const *keyfile, char const *output)
         mpz_export(&ciphertext[i], NULL, 1, sizeof(size_t), 0, 0, encrypted_var);
 
         //Write the encrypted text in file
-        fwrite(&ciphertext[i], sizeof(size_t), 1, encrypted_file);
-
+        // fwrite(&ciphertext[i], sizeof(size_t), 1, encrypted_file);
+        (*original_fwrite)(&ciphertext[i], sizeof(size_t), 1, encrypted_file);
         //Increment
         i++;
 

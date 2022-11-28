@@ -1,4 +1,8 @@
-all: logger acmonitor test_aclog
+all: logger acmonitor test_aclog rsa_assign_1
+
+rsa_assign_1: rsa_assign_1.c
+	gcc rsa_assign_1.c -o rsa_assign_1 -lm -lgmp
+	./rsa_assign_1 -g
 
 logger: logger.c
 	gcc -Wall -fPIC -shared -o logger.so logger.c rsa_assign_1.c -lcrypto -ldl -lm -lgmp
@@ -16,5 +20,6 @@ clean:
 	rm -rf logger.so
 	rm -rf test_aclog
 	rm -rf acmonitor
+	rm -rf rsa_assign_1
 	rm -rf file_*
 	rm -rf public.key private.key

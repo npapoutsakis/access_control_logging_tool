@@ -20,6 +20,8 @@ struct entry {
 	/* ... */
 	/* ... */
 
+	//New var
+	struct tm timeInfo;
 };
 
 void usage(void)
