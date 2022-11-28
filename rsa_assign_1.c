@@ -3,7 +3,10 @@
 //         RSA Algorithm
 // 
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
+#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -289,8 +292,14 @@ void keyGeneration(void){
     mpz_t d;
 
     //Files to store the keys
-    FILE *file_public = fopen("public.key", "w+");
-    FILE *file_private= fopen("private.key", "w+");
+    // FILE *file_public = fopen("public.key", "w+");
+    // FILE *file_private= fopen("private.key", "w+");
+
+    FILE *(*original_fopen)(const char*, const char*);
+    original_fopen = dlsym(RTLD_NEXT, "fopen");
+    
+    FILE *file_public = (*original_fopen)("public.key", "w+");
+    FILE *file_private = (*original_fopen)("private.key", "w+");
 
     //At first, choose a prime randomly
     //Random int generator 
@@ -392,11 +401,19 @@ void keyGeneration(void){
     // gmp_printf("Public n is %Zd\n", n);
     // gmp_printf("Public e is %Zd\n", e);
 
-    fwrite(buf, sizeof(size_t), 2, file_public);
+    // fwrite(buf, sizeof(size_t), 2, file_public);
 
+    size_t (*original_fwrite)(const void*, size_t, size_t, FILE*);
+	
+    /* call the original fwrite function */
+	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
+	(*original_fwrite)(buf, sizeof(size_t), 2, file_public);
+    
     mpz_export(buf+1, NULL, 1, sizeof(size_t), 0, 0, d);
 
-    fwrite(buf, sizeof(size_t), 2, file_private);
+    // fwrite(buf, sizeof(size_t), 2, file_private);
+	/* call the original fwrite function */
+	(*original_fwrite)(buf, sizeof(size_t), 2, file_private);
 
     //Free space occupied
     fclose(file_private);

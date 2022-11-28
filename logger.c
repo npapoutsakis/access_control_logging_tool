@@ -13,13 +13,8 @@
 
 #define LOG_FILE "file_logging.log"
 
-
-// one hash function
-// get priviledge function
-// get file length
-// get file path
-// update log file -> to update
-// rsa decrypt to read, then again encrypt
+unsigned char* getFingerprint(char *path);
+long getFileLength(FILE *file);
 
 FILE *fopen(const char *path, const char *mode) 
 {
@@ -38,7 +33,7 @@ FILE *fopen(const char *path, const char *mode)
 	time_t datetime; 
 	
 	char *filepath = NULL;
-	char *fingerprint = NULL;
+	unsigned char *hash = NULL;
 
 	/*First, get the user id*/
 	uid = (unsigned int)getuid();
@@ -88,8 +83,6 @@ FILE *fopen(const char *path, const char *mode)
 			action_denied = 1;			//Action Denied!
 	}
 
-	/*So, now we got uid, access_type and action_denied info*/
-
 	// Get the file path
 	// Help at https://pubs.opengroup.org/onlinepubs/009696799/functions/realpath.html
 	filepath = realpath(path, NULL); 	//max_size = NULL, no specific format
@@ -99,12 +92,15 @@ FILE *fopen(const char *path, const char *mode)
 	datetime = time(NULL);
 	struct tm timestamp = *localtime(&datetime);
 
-	// printf("%d\t%s\t%02d/%02d/%d\t%02d:%02d:%02d\t%d\t%d\t\n", uid, path, timestamp.tm_mday, timestamp.tm_mon + 1, timestamp.tm_year + 1900, timestamp.tm_hour, timestamp.tm_min, timestamp.tm_sec, access_type, action_denied);
-
-	encryptData(path, "public.key", path);
-
+	// printf("%d\t%s\t%02d/%02d/%d\t%02d:%02d:%02d\t%d\t%d\t\n", 
+	//uid, path, timestamp.tm_mday, timestamp.tm_mon + 1, timestamp.tm_year + 1900, timestamp.tm_hour, timestamp.tm_min, timestamp.tm_sec, access_type, action_denied);
 
 
+	//get the hash of file contents
+	hash = getFingerprint(path);
+
+	// update_logfile(uid, access_type, action_denied, filepath);
+	
 
 	/*Will return the original fopen(), after we've collected info*/
 	return original_fopen_ret;
@@ -121,7 +117,6 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
 	original_fwrite_ret = (*original_fwrite)(ptr, size, nmemb, stream);
 
-
 	/* add your code here */
 	/* ... */
 	/* ... */
@@ -132,20 +127,55 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return original_fwrite_ret;
 }
 
-char* getFingerprint(){
+unsigned char* getFingerprint(char *path){
 
-	
+	unsigned char* returnVal = NULL;
 
-	return NULL;
+	MD5_CTX ctx;
+
+	MD5_Init(&ctx);
+
+	//need to find file length
+	FILE *(*original_fopen)(const char*, const char*);
+	original_fopen = dlsym(RTLD_NEXT, "fopen");
+	FILE *file = (*original_fopen)(path, "r");
+
+	long size = getFileLength(file);
+
+	// size=-1 -> file cant be opened
+	if(size > 0){
+		unsigned char file_content[size];
+		fread(file_content, size, 1, file);				//read all content-> size bytes
+		MD5_Update(&ctx, file_content, size);
+		MD5_Final(returnVal, &ctx);
+	}
+	else if(size == -1)
+		exit(-1);
+
+	fclose(file);
+	return returnVal;
 }
 
+long getFileLength(FILE *file){
+
+	long fileLength = -1;
+
+	if(file != NULL) {
+		fseek(file, 0, SEEK_END);
+		fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
+	}
+
+	return fileLength;
+}
 
 /*Update Log File every time an event happend*/
 void update_logfile(unsigned int uid, int accessType, int denied, int path){
-	
+	//decrypt()		
 
 
 
 
+	//encrypt()
 	return;
 }

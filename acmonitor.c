@@ -22,7 +22,6 @@ struct entry {
 
 };
 
-
 void usage(void)
 {
 	printf(
@@ -53,7 +52,6 @@ void list_unauthorized_accesses(FILE *log)
 
 }
 
-
 void list_file_modifications(FILE *log, char *file_to_scan)
 {
 
@@ -66,7 +64,6 @@ void list_file_modifications(FILE *log, char *file_to_scan)
 	return;
 
 }
-
 
 int main(int argc, char *argv[])
 {
