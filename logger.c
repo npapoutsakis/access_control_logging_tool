@@ -24,10 +24,6 @@ FILE *fopen(const char *path, const char *mode)
 	FILE *original_fopen_ret;
 	FILE *(*original_fopen)(const char*, const char*);
 
-	/* call the original fopen function */
-	original_fopen = dlsym(RTLD_NEXT, "fopen");
-	original_fopen_ret = (*original_fopen)(path, mode);
-
 	/*All usefull info for log file - entry struct*/
 	unsigned int uid = 0;
 	int access_type = 0;
@@ -37,7 +33,7 @@ FILE *fopen(const char *path, const char *mode)
 	struct tm timestamp;
 	char *filepath = NULL;
 	
-	unsigned char *hash = NULL;
+	unsigned char *hash = {0};
 
 	/*First, get the user id*/
 	uid = (unsigned int)getuid();
@@ -54,30 +50,30 @@ FILE *fopen(const char *path, const char *mode)
 		int read_priviledge = access(path, R_OK);
 		int write_priviledge = access(path, W_OK);
 
-		if(!strcmp(mode, "r")){
+		if(strcmp(mode, "r") == 0){
 			if(read_priviledge != -1)
 				action_denied = 0;
 			else
 				action_denied = 1;
 		}
-		else if(!strcmp(mode, "w") || !strcmp(mode, "a")){
+		else if(strcmp(mode, "w") == 0 || strcmp(mode, "a") == 0){
 			if(write_priviledge != -1)
 				action_denied = 0;
 			else
 				action_denied = 1;
 
 			/*In case mode is w, and no denied action*/
-			if(!strcmp(mode, "w") && action_denied == 0)
+			if(strcmp(mode, "w")==0 && action_denied == 0)
 				access_type = 3;		//Deletion, mode w erases the content
 		}
-		else if(!strcmp(mode, "r+") || !strcmp(mode, "w+") || !strcmp(mode, "a+")){
+		else if(strcmp(mode, "r+") == 0 || strcmp(mode, "w+") == 0 || strcmp(mode, "a+") == 0){
 			/*All modes require read & write permission*/
 			if(write_priviledge != -1 && read_priviledge != -1)
 				action_denied = 0;
 			else
 				action_denied = 1;
 
-			if(!strcmp(mode, "w+") && action_denied == 0)
+			if(strcmp(mode, "w+") == 0 && action_denied == 0)
 				access_type = 3; 		//Deletion
 		}
 	}
@@ -89,6 +85,10 @@ FILE *fopen(const char *path, const char *mode)
 		//Might move the below part inside existance check
 	}
 
+	/* call the original fopen function */
+	original_fopen = dlsym(RTLD_NEXT, "fopen");
+	original_fopen_ret = (*original_fopen)(path, mode);
+
 	// Get the file path
 	// Help at https://pubs.opengroup.org/onlinepubs/009696799/functions/realpath.html
 	filepath = realpath(path, NULL); 	//max_size = NULL, no specific format
@@ -98,12 +98,20 @@ FILE *fopen(const char *path, const char *mode)
 	date_time = time(NULL);
 	timestamp = *localtime(&date_time);
 
-	//get the hash of file contents
-	hash = getFingerprint(path);
-	
-	//Update LogFile
-	update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
-	
+	if(original_fopen_ret != NULL && filepath != NULL){
+		//get the hash of file contents
+		hash = getFingerprint(path);
+
+		//Update LogFile
+		update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
+	}
+	else{
+		if(filepath != NULL)
+			update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
+		else
+			update_logfile(uid, path, timestamp, access_type, action_denied, hash);
+	}
+
 	/*Will return the original fopen(), after we've collected info*/
 	return original_fopen_ret;
 }
@@ -115,9 +123,6 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	size_t original_fwrite_ret;
 	size_t (*original_fwrite)(const void*, size_t, size_t, FILE*);
 
-	/* call the original fwrite function */
-	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
-	original_fwrite_ret = (*original_fwrite)(ptr, size, nmemb, stream);
 
 	/*All usefull info for log file - entry struct*/
 	unsigned int uid = 0;
@@ -147,6 +152,10 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 			action_denied = 0;
 	}
 	
+	/* call the original fwrite function */
+	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
+	original_fwrite_ret = (*original_fwrite)(ptr, size, nmemb, stream);
+
 	/*Time&Date*/
 	date_time = time(NULL);
 	timestamp = *localtime(&date_time);
@@ -222,7 +231,7 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 
 	//If the file has content, then decrypt using private.key, else write the first content and encrypt using publiv.key	
 	if((int)getFileLength(logFile) > 0){
-		decryptData(LOG_FILE, "private.key", LOG_FILE);
+		// decryptData(LOG_FILE, "private.key", LOG_FILE);
 	}
 
 	fprintf(logFile, "%u\t%s\t%d-%d-%d %02d:%02d:%02d  %d  %d ", uid, path, timeInfo.tm_mday, 
@@ -249,7 +258,7 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 	fclose(logFile);
 
 	//Encrypt the log file and return
-	encryptData(LOG_FILE, "public.key", LOG_FILE);
+	// encryptData(LOG_FILE, "public.key", LOG_FILE);
 
 	return;
 }
