@@ -18,6 +18,7 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 char *getPathFromStream(FILE *file);
 unsigned char* getFingerprint(const char *path);
 long getFileLength(FILE *file);
+void getHash(unsigned char *buf, int length, unsigned char *hash);
 
 FILE *fopen(const char *path, const char *mode) 
 {
@@ -34,7 +35,8 @@ FILE *fopen(const char *path, const char *mode)
 	struct tm timestamp;
 	char *filepath = NULL;
 	
-	unsigned char *hash = {0};
+	unsigned char *hash = (unsigned char *)malloc(MD5_DIGEST_LENGTH);
+	memset(hash, 0, MD5_DIGEST_LENGTH);
 
 	/*First, get the user id*/
 	uid = (unsigned int)getuid();
@@ -90,9 +92,8 @@ FILE *fopen(const char *path, const char *mode)
 	original_fopen = dlsym(RTLD_NEXT, "fopen");
 	original_fopen_ret = (*original_fopen)(path, mode);
 
-	//If the path is used for log file and keys then return
-	FILE *file_logging = (*original_fopen)(LOG_FILE, "a");
-	if (strcmp(path,"file_logging.log") == 0)
+	//If the path is used for logfile and keys, return
+	if(strcmp(path,"file_logging.log") == 0)
 		return original_fopen_ret;
 	if(strcmp(path,"public.key") == 0 || strcmp(path,"private.key") == 0)
 		return original_fopen_ret;
@@ -106,20 +107,18 @@ FILE *fopen(const char *path, const char *mode)
 	date_time = time(NULL);
 	timestamp = *localtime(&date_time);
 
-	if(original_fopen_ret != NULL && filepath != NULL){
-		//get the hash of file contents
-		hash = getFingerprint(path);
-
-		//Update LogFile
-		update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
-	}
-	else{
-		if(filepath != NULL)
-			update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
-		else
-			update_logfile(uid, path, timestamp, access_type, action_denied, hash);
+	//Will give null if file doesnt exist or for permission reason
+	if(original_fopen_ret == NULL){
+		update_logfile(uid, path, timestamp, access_type, action_denied, hash);
+		return original_fopen_ret;
 	}
 
+	//get the hash of file contents
+	hash = getFingerprint(path);
+
+	//Update LogFile
+	update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
+	
 	/*Will return the original fopen(), after we've collected info*/
 	return original_fopen_ret;
 }
@@ -127,10 +126,8 @@ FILE *fopen(const char *path, const char *mode)
 
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) 
 {
-
 	size_t original_fwrite_ret;
 	size_t (*original_fwrite)(const void*, size_t, size_t, FILE*);
-
 
 	/*All usefull info for log file - entry struct*/
 	unsigned int uid = 0;
@@ -141,7 +138,9 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	struct tm timestamp;
 	char *filepath = NULL;
 	
-	unsigned char *hash = NULL;
+	//Declare space for hash
+	unsigned char *hash = (unsigned char *)malloc(MD5_DIGEST_LENGTH);
+	memset(hash, 0, MD5_DIGEST_LENGTH);
 
 	/*First, get the user id*/
 	uid = (unsigned int)getuid();
@@ -169,13 +168,27 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	timestamp = *localtime(&date_time);
 
 	//get the hash of file contents
-	hash = getFingerprint(filepath);
+	getHash((unsigned char *)ptr, size, hash);
 
 	//Update LogFile
 	update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
 
 	/*Will return the original fwrite(), after we've collected info*/
 	return original_fwrite_ret;
+}
+
+void getHash(unsigned char *buf, int length, unsigned char *hash){
+	
+	//Just the simple hashing procedure
+	MD5_CTX md5_ctx;
+
+	MD5_Init(&md5_ctx);
+
+	MD5_Update(&md5_ctx, buf, length);
+
+	MD5_Final(hash, &md5_ctx);
+
+	return;
 }
 
 unsigned char* getFingerprint(const char *path){
