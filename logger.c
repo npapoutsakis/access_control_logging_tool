@@ -24,6 +24,7 @@ FILE *fopen(const char *path, const char *mode)
 	FILE *original_fopen_ret;
 	FILE *(*original_fopen)(const char*, const char*);
 
+
 	/*All usefull info for log file - entry struct*/
 	unsigned int uid = 0;
 	int access_type = 0;
@@ -88,6 +89,13 @@ FILE *fopen(const char *path, const char *mode)
 	/* call the original fopen function */
 	original_fopen = dlsym(RTLD_NEXT, "fopen");
 	original_fopen_ret = (*original_fopen)(path, mode);
+
+	//If the path is used for log file and keys then return
+	FILE *file_logging = (*original_fopen)(LOG_FILE, "a");
+	if (strcmp(path,"file_logging.log") == 0)
+		return original_fopen_ret;
+	if(strcmp(path,"public.key") == 0 || strcmp(path,"private.key") == 0)
+		return original_fopen_ret;
 
 	// Get the file path
 	// Help at https://pubs.opengroup.org/onlinepubs/009696799/functions/realpath.html
@@ -188,7 +196,7 @@ unsigned char* getFingerprint(const char *path){
 	if(size > 0){
 		unsigned char file_content[size];
 		returnVal = (unsigned char *)malloc(size*sizeof(char));
-		fread(file_content, size, 1, file);							//read all content-> size bytes
+		fread(file_content, 1, size, file);							//read all content-> size bytes
 		MD5_Update(&ctx, file_content, size);
 		MD5_Final(returnVal, &ctx);
 	}
@@ -231,10 +239,10 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 
 	//If the file has content, then decrypt using private.key, else write the first content and encrypt using publiv.key	
 	if((int)getFileLength(logFile) > 0){
-		// decryptData(LOG_FILE, "private.key", LOG_FILE);
+		decryptData(LOG_FILE, "private.key", LOG_FILE);
 	}
 
-	fprintf(logFile, "%u\t%s\t%d-%d-%d %02d:%02d:%02d  %d  %d ", uid, path, timeInfo.tm_mday, 
+	fprintf(logFile, "%u\t%s\t%d-%d-%d\t%02d:%02d:%02d\t%d\t%d\t", uid, path, timeInfo.tm_mday, 
 	timeInfo.tm_mon+1, timeInfo.tm_year+1900, timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec, 
 	accessType, denied);
 
@@ -258,7 +266,7 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 	fclose(logFile);
 
 	//Encrypt the log file and return
-	// encryptData(LOG_FILE, "public.key", LOG_FILE);
+	encryptData(LOG_FILE, "public.key", LOG_FILE);
 
 	return;
 }

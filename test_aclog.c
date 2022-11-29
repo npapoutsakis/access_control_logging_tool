@@ -15,57 +15,57 @@ int main()
 
 	/* example source code */
 
-	// for (i = 0; i < 10; i++) 
-	// {
-	// 	file = fopen(filenames[i], "r");		//this should fail
-
-	// 	file = fopen(filenames[i], "w+");
-
-	// 	if (file == NULL) 
-	// 	{
-	// 		printf("fopen error 1\n");
-	// 	}
-	// 	else 
-	// 	{
-	// 		bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
-	// 		fclose(file);
-	// 	}
-
-	// }
-
-	FILE *file2;
-
-	char filenames2[10][10] = {"file_WO_0", "file_WO_1", 
-			"file_WO_2", "file_WO_3", "file_WO_4",
-			"file_WO_5", "file_WO_6", "file_WO_7", 		
-			"file_WO_8", "file_WO_9"};
-
 	for (i = 0; i < 10; i++) 
 	{
-		//Create file_WO
-		file2 = fopen(filenames2[i], "r");		//this should fail
+		file = fopen(filenames[i], "r");		//this should fail
 
-		file2 = fopen(filenames2[i], "w+");
+		file = fopen(filenames[i], "w+");
 
-		if (file2 == NULL)
+		if (file == NULL) 
 		{
-			file2 = fopen(filenames2[i], "w");
+			printf("fopen error 1\n");
 		}
-
-		if (file2 != NULL)
+		else 
 		{
-			bytes = fwrite(filenames2[i], strlen(filenames2[i]), 1, file2);	
-			fclose(file2);
+			bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
+			fclose(file);
 		}
-		
-		file2 = fopen(filenames2[i], "r");
-		
-		//Change permissions to write only for this user
-		chmod(filenames2[i], S_IWUSR);			
-
-		file2 = fopen(filenames2[i], "r");	//This should fail
 
 	}
+
+	// FILE *file2;
+
+	// char filenames2[10][10] = {"file_WO_0", "file_WO_1", 
+	// 		"file_WO_2", "file_WO_3", "file_WO_4",
+	// 		"file_WO_5", "file_WO_6", "file_WO_7", 		
+	// 		"file_WO_8", "file_WO_9"};
+
+	// for (i = 0; i < 10; i++) 
+	// {
+	// 	//Create file_WO
+	// 	file2 = fopen(filenames2[i], "r");		//this should fail
+
+	// 	file2 = fopen(filenames2[i], "w+");
+
+	// 	if (file2 == NULL)
+	// 	{
+	// 		file2 = fopen(filenames2[i], "w");
+	// 	}
+
+	// 	if (file2 != NULL)
+	// 	{
+	// 		bytes = fwrite(filenames2[i], strlen(filenames2[i]), 1, file2);	
+	// 		fclose(file2);
+	// 	}
+		
+	// 	file2 = fopen(filenames2[i], "r");
+		
+	// 	//Change permissions to write only for this user
+	// 	chmod(filenames2[i], S_IWUSR);			
+
+	// 	file2 = fopen(filenames2[i], "r");	//This should fail
+
+	// }
 
 //CREATE FILE, CHANGE ITS PERMISSIONS AND READ IT
 /////////////////////////////////////////////////////////////////////////////////////

@@ -8,7 +8,7 @@ logger: logger.c
 	gcc -Wall -fPIC -shared -o logger.so logger.c rsa_assign_1.c -lcrypto -ldl -lm -lgmp
 
 acmonitor: acmonitor.c 
-	gcc acmonitor.c -o acmonitor
+	gcc acmonitor.c -o acmonitor -lm -lgmp
 
 test_aclog: test_aclog.c 
 	gcc test_aclog.c -o test_aclog
