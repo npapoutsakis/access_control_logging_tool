@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 int main() 
 {
@@ -20,12 +21,33 @@ int main()
 		if (file == NULL) 
 			printf("fopen error\n");
 		else {
-			bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
+			bytes = fwrite(filenames[i], 1, strlen(filenames[i]), file);
+			// printf("Bytes written: %ld\n", bytes);
 			fclose(file);
 		}
-
+	
 	}
 
+	// for (i = 0; i < 10; i++) {
+
+	// 	file = fopen(filenames[i], "a");
+	// 	if (file == NULL) 
+	// 		printf("fopen error\n");
+	// 	else {
+	// 		bytes = fwrite(filenames[i], 1, strlen(filenames[i]), file);
+	// 		// printf("Bytes written: %ld\n", bytes);
+	// 		fclose(file);
+	// 	}
+
+	// }
+
+	// char *message = "Bye";
+
+	// file = fopen(filenames[0], "a+");
+
+	// fwrite(message, 1, strlen(message), file);
+
+	// fclose(file);
 
 	/* add your code here */
 	/* ... */
@@ -33,5 +55,5 @@ int main()
 	/* ... */
 	/* ... */
 
-
+	return 0;
 }

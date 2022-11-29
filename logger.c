@@ -85,6 +85,8 @@ FILE *fopen(const char *path, const char *mode)
 		access_type = 0;				//Creation, file doesnt exist
 		if(mode[0] == 'r')				//If mode is read and file doesnt exist
 			action_denied = 1;			//Action Denied!
+		//Basically fopen will return null
+		//Might move the below part inside existance check
 	}
 
 	// Get the file path
@@ -98,10 +100,10 @@ FILE *fopen(const char *path, const char *mode)
 
 	//get the hash of file contents
 	hash = getFingerprint(path);
-
+	
 	//Update LogFile
 	update_logfile(uid, filepath, timestamp, access_type, action_denied, hash);
-
+	
 	/*Will return the original fopen(), after we've collected info*/
 	return original_fopen_ret;
 }
@@ -160,11 +162,10 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 }
 
 unsigned char* getFingerprint(const char *path){
-
+	
 	unsigned char* returnVal = NULL;
 
 	MD5_CTX ctx;
-
 	MD5_Init(&ctx);
 
 	//need to find file length
@@ -177,7 +178,8 @@ unsigned char* getFingerprint(const char *path){
 	// size=-1 -> file cant be opened
 	if(size > 0){
 		unsigned char file_content[size];
-		fread(file_content, size, 1, file);				//read all content-> size bytes
+		returnVal = (unsigned char *)malloc(size*sizeof(char));
+		fread(file_content, size, 1, file);							//read all content-> size bytes
 		MD5_Update(&ctx, file_content, size);
 		MD5_Final(returnVal, &ctx);
 	}
@@ -210,7 +212,9 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 
 	//Open logFile to append the new entry
 	FILE *logFile = (*original_fopen)(LOG_FILE, "a");	
-	
+
+	// printf("After opened log file!\n");
+
 	if(logFile == NULL){
 		printf("Log file didn't open!.....Something happend!\n");
 		exit(-1);	
@@ -221,9 +225,26 @@ void update_logfile(unsigned int uid, const char *path, struct tm timeInfo, int 
 		decryptData(LOG_FILE, "private.key", LOG_FILE);
 	}
 
-	fprintf(logFile, "%u\t%s\t%d-%d-%d %02d:%02d:%02d  %d  %d\t%s\n", uid, path, timeInfo.tm_mday, 
+	fprintf(logFile, "%u\t%s\t%d-%d-%d %02d:%02d:%02d  %d  %d ", uid, path, timeInfo.tm_mday, 
 	timeInfo.tm_mon+1, timeInfo.tm_year+1900, timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec, 
-	accessType, denied, hash);
+	accessType, denied);
+
+	//write the hash
+	if(hash != NULL){
+		for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+			fprintf(logFile, "%02x", hash[i]);
+			if(i == MD5_DIGEST_LENGTH - 1)
+				fprintf(logFile, "\n");
+		}
+		free(hash);
+	}
+	else {
+		for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+			fprintf(logFile, "%02x", 0);
+			if(i == MD5_DIGEST_LENGTH - 1)
+				fprintf(logFile, "\n");
+		}		
+	}
 
 	fclose(logFile);
 

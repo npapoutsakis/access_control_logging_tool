@@ -16,10 +16,6 @@ struct entry {
 	char *file; /* filename (string) */
 	char *fingerprint; /* file fingerprint */
 
-	/* add here other fields if necessary */
-	/* ... */
-	/* ... */
-
 	//New var
 	struct tm timeInfo;
 };
@@ -37,21 +33,25 @@ void usage(void)
 		   "-h, Help message\n\n"
 		   );
 
-	exit(1);
+	exit(0);
 }
 
 
 void list_unauthorized_accesses(FILE *log)
 {
 
-	/* add your code here */
-	/* ... */
-	/* ... */
-	/* ... */
-	/* ... */
+	
+
+
+
+
+
+
+
+
+
 
 	return;
-
 }
 
 void list_file_modifications(FILE *log, char *file_to_scan)
@@ -95,14 +95,6 @@ int main(int argc, char *argv[])
 		}
 
 	}
-
-
-	/* add your code here */
-	/* ... */
-	/* ... */
-	/* ... */
-	/* ... */
-
 
 	fclose(log);
 	argc -= optind;
